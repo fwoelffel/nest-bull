@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Queue } from 'bull';
+import { Queue } from 'bullmq';
 import { BullModule, getQueueToken } from '../lib';
 
 describe('BullModule', () => {
@@ -14,7 +14,7 @@ describe('BullModule', () => {
           imports: [
             BullModule.registerQueue({
               name: 'test',
-              redis: {
+              connection: {
                 host: '0.0.0.0',
                 port: 6380,
               },
@@ -41,14 +41,14 @@ describe('BullModule', () => {
             BullModule.registerQueue(
               {
                 name: 'test1',
-                redis: {
+                connection: {
                   host: '0.0.0.0',
                   port: 6380,
                 },
               },
               {
                 name: 'test2',
-                redis: {
+                connection: {
                   host: '0.0.0.0',
                   port: 6380,
                 },
@@ -82,7 +82,7 @@ describe('BullModule', () => {
         moduleRef = await Test.createTestingModule({
           imports: [
             BullModule.forRoot({
-              redis: {
+              connection: {
                 host: '0.0.0.0',
                 port: 6380,
               },
@@ -110,7 +110,7 @@ describe('BullModule', () => {
         moduleRef = await Test.createTestingModule({
           imports: [
             BullModule.forRoot({
-              redis: {
+              connection: {
                 host: '0.0.0.0',
                 port: 6380,
               },
@@ -181,7 +181,7 @@ describe('BullModule', () => {
                 {
                   name: 'test1',
                   useFactory: () => ({
-                    redis: {
+                    connection: {
                       host: '0.0.0.0',
                       port: 6380,
                     },
@@ -190,7 +190,7 @@ describe('BullModule', () => {
                 {
                   name: 'test2',
                   useFactory: () => ({
-                    redis: {
+                    connection: {
                       host: '0.0.0.0',
                       port: 6380,
                     },
@@ -228,7 +228,7 @@ describe('BullModule', () => {
             imports: [
               BullModule.forRootAsync({
                 useFactory: () => ({
-                  redis: {
+                  connection: {
                     host: '0.0.0.0',
                     port: 6380,
                   },
@@ -265,7 +265,7 @@ describe('BullModule', () => {
             imports: [
               BullModule.forRootAsync({
                 useFactory: () => ({
-                  redis: {
+                  connection: {
                     host: '0.0.0.0',
                     port: 6380,
                   },
@@ -306,7 +306,7 @@ describe('BullModule', () => {
             imports: [
               BullModule.forRootAsync({
                 useFactory: () => ({
-                  redis: {
+                  connection: {
                     host: '0.0.0.0',
                     port: 6380,
                   },
@@ -340,7 +340,7 @@ describe('BullModule', () => {
             imports: [
               BullModule.forRootAsync({
                 useFactory: () => ({
-                  redis: {
+                  connection: {
                     host: '0.0.0.0',
                     port: 6380,
                   },
@@ -381,7 +381,7 @@ describe('BullModule', () => {
         imports: [
           BullModule.registerQueue({
             name: 'full_flow',
-            redis: {
+            connection: {
               host: '0.0.0.0',
               port: 6380,
             },
@@ -397,9 +397,10 @@ describe('BullModule', () => {
     it('should process jobs with the given processors', async () => {
       const queue = testingModule.get<Queue>(getQueueToken('full_flow'));
 
-      await queue.add(null);
+      await queue.add('job1', null);
+
       return new Promise<void>((resolve) => {
-        setTimeout(() => {
+        setTimeout(async () => {
           expect(fakeProcessor).toHaveBeenCalledTimes(1);
           resolve();
         }, 1000);

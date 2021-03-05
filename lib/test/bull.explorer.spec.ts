@@ -1,8 +1,14 @@
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { Test, TestingModule } from '@nestjs/testing';
+import {Worker} from 'bullmq'
 import { BullExplorer } from '../bull.explorer';
 import { BullModule } from '../bull.module';
 import { getQueueToken } from '../utils';
+
+jest.mock('bullmq', () => ({
+  ...jest.requireActual('bullmq'),
+  Worker: jest.fn()
+}))
 
 describe('BullExplorer', () => {
   let bullExplorer: BullExplorer;
@@ -11,7 +17,7 @@ describe('BullExplorer', () => {
   beforeAll(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [
-        BullModule.registerQueue({ name: 'test', redis: { port: 6380 } }),
+        BullModule.registerQueue({ name: 'test', connection: { port: 6380 } }),
       ],
     }).compile();
 
@@ -20,16 +26,21 @@ describe('BullExplorer', () => {
   afterAll(async () => {
     await moduleRef.close();
   });
+
+  afterEach(() => {
+    (Worker as unknown as jest.Mock).mockClear();
+  })
+
   describe('handleProcessor', () => {
-    it('should add the given function to the queue handlers', () => {
+    it('should create a Worker', () => {
       const instance = { handler: jest.fn() };
-      const queue = { process: jest.fn() } as any;
+      const queue = { name: 'test' } as any;
       bullExplorer.handleProcessor(instance, 'handler', queue, null, false);
-      expect(queue.process).toHaveBeenCalledWith(expect.any(Function));
+      expect(Worker).toHaveBeenCalledWith('test', expect.any(Function), {});
     });
-    it('should add the given function to the queue handlers with concurrency', () => {
+    it('should set concurrency on a Worker', () => {
       const instance = { handler: jest.fn() };
-      const queue = { process: jest.fn() } as any;
+      const queue = { name: 'test' } as any;
       const opts = { concurrency: 42 };
       bullExplorer.handleProcessor(
         instance,
@@ -39,14 +50,11 @@ describe('BullExplorer', () => {
         false,
         opts,
       );
-      expect(queue.process).toHaveBeenCalledWith(
-        opts.concurrency,
-        expect.any(Function),
-      );
+      expect(Worker).toHaveBeenCalledWith('test', expect.any(Function), opts)
     });
-    it('should add the given function to the queue handlers with concurrency with a 0 value', () => {
+    it('should set concurrency on a Worker with a value of 0', () => {
       const instance = { handler: jest.fn() };
-      const queue = { process: jest.fn() } as any;
+      const queue = { name: 'test' } as any;
       const opts = { concurrency: 0 };
       bullExplorer.handleProcessor(
         instance,
@@ -56,46 +64,7 @@ describe('BullExplorer', () => {
         false,
         opts,
       );
-      expect(queue.process).toHaveBeenCalledWith(
-        opts.concurrency,
-        expect.any(Function),
-      );
-    });
-    it('should add the given function to the queue handlers with name', () => {
-      const instance = { handler: jest.fn() };
-      const queue = { process: jest.fn() } as any;
-      const opts = { name: 'test' };
-      bullExplorer.handleProcessor(
-        instance,
-        'handler',
-        queue,
-        null,
-        false,
-        opts,
-      );
-      expect(queue.process).toHaveBeenCalledWith(
-        opts.name,
-        expect.any(Function),
-      );
-    });
-    it('should add the given function to the queue handlers with concurrency and name', () => {
-      const instance = { handler: jest.fn() };
-      const queue = { process: jest.fn() } as any;
-      const opts = { name: 'test', concurrency: 42 };
-
-      bullExplorer.handleProcessor(
-        instance,
-        'handler',
-        queue,
-        null,
-        false,
-        opts,
-      );
-      expect(queue.process).toHaveBeenCalledWith(
-        opts.name,
-        opts.concurrency,
-        expect.any(Function),
-      );
+      expect(Worker).toHaveBeenCalledWith('test', expect.any(Function), opts)
     });
   });
 

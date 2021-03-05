@@ -3,7 +3,7 @@ import {
   ModuleMetadata,
   Type,
 } from '@nestjs/common/interfaces';
-import * as Bull from 'bull';
+import * as Bull from 'bullmq';
 import { BullQueueProcessor } from '../bull.types';
 
 export interface BullModuleOptions extends Bull.QueueOptions {

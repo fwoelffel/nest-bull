@@ -1,4 +1,4 @@
-import { DoneCallback, Job } from 'bull';
+import { Job } from 'bullmq';
 import {
   BullQueueAdvancedProcessor,
   BullQueueAdvancedSeparateProcessor,
@@ -20,10 +20,7 @@ export type BullQueueProcessor =
   | BullQueueSeparateProcessor
   | BullQueueAdvancedSeparateProcessor;
 
-export type BullQueueProcessorCallback = (
-  job: Job,
-  done?: DoneCallback,
-) => void;
+export type BullQueueProcessorCallback = (job: Job) => Promise<any>;
 
 export type BullQueueSeparateProcessor = string;
 

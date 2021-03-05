@@ -3,7 +3,7 @@ import {
   ModuleMetadata,
   Type,
 } from '@nestjs/common/interfaces';
-import * as Bull from 'bull';
+import * as Bull from 'bullmq';
 
 export interface SharedBullConfigurationFactory {
   createSharedConfiguration(): Promise<Bull.QueueOptions> | Bull.QueueOptions;

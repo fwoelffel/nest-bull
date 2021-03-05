@@ -4,7 +4,7 @@ import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { Module } from '@nestjs/core/injector/module';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { Job, ProcessCallbackFunction, Queue } from 'bull';
+import { Job, Processor, Queue, Worker } from 'bullmq';
 import { BullMetadataAccessor } from './bull-metadata.accessor';
 import { NO_QUEUE_FOUND } from './bull.messages';
 import { BullQueueEventOptions } from './bull.types';
@@ -86,14 +86,12 @@ export class BullExplorer implements OnModuleInit {
     queue: Queue,
     moduleRef: Module,
     isRequestScoped: boolean,
-    options?: ProcessOptions,
+    options: ProcessOptions = {},
   ) {
-    let args: unknown[] = [options?.name, options?.concurrency];
+    let processor: Processor<any, void, string>;
 
     if (isRequestScoped) {
-      const callback: ProcessCallbackFunction<unknown> = async (
-        ...args: unknown[]
-      ) => {
+      processor = async (...args: unknown[]) => {
         const contextId = createContextId();
 
         if (this.moduleRef.registerRequestByContextId) {
@@ -111,14 +109,11 @@ export class BullExplorer implements OnModuleInit {
         );
         return contextInstance[key].call(contextInstance, ...args);
       };
-      args.push(callback);
     } else {
-      args.push(
-        instance[key].bind(instance) as ProcessCallbackFunction<unknown>,
-      );
+      processor = instance[key].bind(instance);
     }
-    args = args.filter((item) => item !== undefined);
-    queue.process.call(queue, ...args);
+
+    new Worker(queue.name, processor, options);
   }
 
   handleListener(

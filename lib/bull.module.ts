@@ -1,6 +1,6 @@
 import { DynamicModule, Module, Provider, Type } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
-import * as Bull from 'bull';
+import * as Bull from 'bullmq';
 import { BullMetadataAccessor } from './bull-metadata.accessor';
 import { BullExplorer } from './bull.explorer';
 import {
@@ -137,7 +137,7 @@ export class BullModule {
     const queueProviders = createQueueProviders(optionsArr);
     const imports = this.getUniqImports(optionsArr);
     const asyncQueueOptionsProviders = options
-      .map(queueOptions => this.createAsyncProviders(queueOptions))
+      .map((queueOptions) => this.createAsyncProviders(queueOptions))
       .reduce((a, b) => a.concat(b), []);
 
     return {
@@ -199,9 +199,8 @@ export class BullModule {
     }
     // `as Type<BullOptionsFactory>` is a workaround for microsoft/TypeScript#31603
     const inject = [
-      (asyncOptions.useClass || asyncOptions.useExisting) as Type<
-        BullOptionsFactory
-      >,
+      (asyncOptions.useClass ||
+        asyncOptions.useExisting) as Type<BullOptionsFactory>,
     ];
     return {
       provide: getQueueOptionsToken(asyncOptions.name),
@@ -248,9 +247,8 @@ export class BullModule {
     }
     // `as Type<SharedBullConfigurationFactory>` is a workaround for microsoft/TypeScript#31603
     const inject = [
-      (options.useClass || options.useExisting) as Type<
-        SharedBullConfigurationFactory
-      >,
+      (options.useClass ||
+        options.useExisting) as Type<SharedBullConfigurationFactory>,
     ];
     return {
       provide: getSharedConfigToken(configKey),
@@ -274,7 +272,7 @@ export class BullModule {
   ) {
     return (
       options
-        .map(option => option.imports)
+        .map((option) => option.imports)
         .reduce((acc, i) => acc.concat(i || []), [])
         .filter((v, i, a) => a.indexOf(v) === i) || []
     );
